@@ -1,0 +1,76 @@
+:root {
+  color-scheme: light dark;
+  --mdkb-primary: #0ea5e9;
+  --mdkb-secondary: #6366f1;
+  --mdkb-primary-soft: color-mix(in oklab, var(--mdkb-primary) 14%, transparent);
+  --mdkb-primary-border: color-mix(in oklab, var(--mdkb-primary) 38%, transparent);
+  --mdkb-secondary-soft: color-mix(in oklab, var(--mdkb-secondary) 14%, transparent);
+  --scrollbar-track: light-dark(#f4f4f5, #18181b);
+  --scrollbar-thumb: light-dark(#a1a1aa, #52525b);
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  accent-color: var(--mdkb-primary);
+
+  &:has(> head > meta[name="color-scheme"][content="dark"]) {
+    color-scheme: dark;
+  }
+
+  &:has(> head > meta[name="color-scheme"][content="light"]) {
+    color-scheme: light;
+  }
+}
+
+html {
+  scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0.5rem;
+  z-index: 2000;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  background: var(--mdkb-primary);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  left: 0.75rem;
+}
+
+.mdkb-heading-anchor {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  text-decoration: none;
+  margin-left: 0.45rem;
+  color: var(--mdkb-primary);
+}
+
+h2:hover .mdkb-heading-anchor,
+h2:focus-within .mdkb-heading-anchor,
+h3:hover .mdkb-heading-anchor,
+h3:focus-within .mdkb-heading-anchor,
+.mdkb-heading-anchor:focus {
+  opacity: 1;
+}
+
+mark.mdkb-search-hit {
+  background: var(--mdkb-primary-soft);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 2px;
+  font-weight: 600;
+}

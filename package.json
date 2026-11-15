@@ -1,0 +1,59 @@
+{
+  "name": "@aleygues/mdkb",
+  "version": "0.1.0",
+  "description": "Simple, fast static documentation web app generator from Markdown files using React, TypeScript, Vite, Chakra UI, and MiniSearch.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "mdkb": "./dist-cli/cli/mdkb.js"
+  },
+  "files": [
+    "dist-cli",
+    "src",
+    "index.html",
+    "public",
+    "README.md"
+  ],
+  "keywords": [
+    "markdown",
+    "documentation",
+    "docs",
+    "static-site-generator",
+    "vite",
+    "react",
+    "chakra-ui",
+    "minisearch"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build:cli": "tsc -p tsconfig.cli.json && chmod +x dist-cli/cli/mdkb.js",
+    "build": "tsc -b && yarn build:cli && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "prepublishOnly": "yarn lint && tsc -b && yarn build:cli"
+  },
+  "dependencies": {
+    "@chakra-ui/react": "^3.38.0",
+    "@emotion/react": "^11.14.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "js-yaml": "^5.5.0",
+    "lucide-react": "^1.72.0",
+    "minisearch": "^7.2.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0",
+    "react-router": "^8.5.1",
+    "remark-directive": "^4.0.0",
+    "remark-gfm": "^4.0.1",
+    "unist-util-visit": "^5.2.0",
+    "vite": "^8.3.6"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "oxlint": "^1.90.0",
+    "typescript": "~7.0.2"
+  }
+}

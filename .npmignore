@@ -1,0 +1,13 @@
+example/
+dist/
+cli/
+plugins/
+node_modules/
+Dockerfile
+.dockerignore
+nginx.conf
+.oxlintrc.json
+tsconfig*.json
+vite.config.ts
+*.tgz
+*.log

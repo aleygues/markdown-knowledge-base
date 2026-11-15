@@ -1,0 +1,35 @@
+{
+  "title": "mdkb Docs",
+  "description": "A fast, customizable static documentation web app powered by Markdown, React, TypeScript, Vite, Chakra UI, and MiniSearch.",
+  "primaryColor": "#0ea5e9",
+  "secondaryColor": "#6366f1",
+  "logo": "/logo.svg",
+  "baseUrl": "/",
+  "menu": [
+    {
+      "category": "Getting Started",
+      "items": [
+        { "label": "Introduction", "link": "/" },
+        { "label": "Quick Start", "link": "/getting-started" }
+      ]
+    },
+    {
+      "category": "Guides",
+      "items": [
+        { "label": "Guides Overview", "link": "/guides" },
+        { "label": "Configuration (mdkb.config.json)", "link": "/guides/configuration" },
+        { "label": "Markdown Features", "link": "/guides/markdown-features" },
+        { "label": "Search & SEO", "link": "/guides/search-and-seo" },
+        { "label": "Docker & Nginx Deployment", "link": "/guides/deployment" }
+      ]
+    },
+    {
+      "category": "External Links",
+      "items": [
+        { "label": "Chakra UI Docs", "link": "https://chakra-ui.com/" },
+        { "label": "React Router Docs", "link": "https://reactrouter.com/" },
+        { "label": "MiniSearch on GitHub", "link": "https://github.com/lucaong/minisearch" }
+      ]
+    }
+  ]
+}
