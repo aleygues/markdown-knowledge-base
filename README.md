@@ -10,7 +10,8 @@ A static documentation generator built with **React**, **TypeScript**, **Vite**,
 - **UI Internationalization (`locale`)**: Set `"locale": "fr"` (or `"en"`, default) in `mdkb.config.json` to localize all UI controls, date formatting, `<html lang>`, and `og:locale`.
 - **Extended Markdown**: YAML frontmatter (`title`, `description`, `previous`, `next`, `updatedAt`), GFM, copyable code blocks, callout boxes (`:::info`, `:::warning`, `:::danger`), **native Mermaid diagrams** (```` ```mermaid ````), and **click-to-zoom image Lightbox**.
 - **Light & Dark Mode**: Automatic system preference detection with a persistent manual toggle (including synced Mermaid diagram themes).
-- **Code-split Bundles**: Splits React/Router, Chakra UI, Lucide icons, Markdown pipeline, MiniSearch, and Mermaid chunks for fast initial page loads.
+- **Interactive Review Mode (`mdkb review`)**: Annotate highlighted page or menu text, images, Mermaid diagrams, and sidebar links directly in the browser; saves/edits/deletes structured `reviews/review_{date_et_heure}.md` files (excluded from documentation indexing).
+- **Code-split Bundles**: Splits React/Router, Chakra UI, Lucide icons, Markdown pipeline, MiniSearch, Mermaid, and Review Mode chunks for fast initial page loads.
 - **SEO Ready**: Per-route static HTML metadata, OpenGraph tags, JSON-LD structured data, `sitemap.xml`, and `robots.txt`.
 
 ## Using `@aleygues/mdkb` in Your Project
@@ -51,14 +52,16 @@ mdkb <command> [options]
 **Commands:**
 - `build` — Compile the static documentation site
 - `dev` — Start a local development server with HMR
+- `review` — Start the documentation in interactive review mode (`reviews/review_*.md`)
 - `preview` — Serve the compiled static output locally
 
 **Options:**
 - `-s, --src <dir>` — Source folder containing `.md` files and `mdkb.config.json` (default: `src`)
 - `-o, --out <dir>` / `--out-dir <dir>` — Output directory for the static build (default: `dist`)
+- `-r, --reviews <dir>` — Output directory for `review_*.md` files in `review` mode (default: `reviews`)
 - `-c, --config <file>` — Explicit path to `mdkb.config.json` (default: `<src>/mdkb.config.json`)
-- `-p, --port <port>` — Port for `dev` or `preview`
-- `--host <host>` — Host to bind `dev` or `preview` (pass bare `--host` for `0.0.0.0`)
+- `-p, --port <port>` — Port for `dev`, `review`, or `preview`
+- `--host <host>` — Host to bind `dev`, `review`, or `preview` (pass bare `--host` for `0.0.0.0`)
 - `-h, --help` — Show CLI help
 - `-v, --version` — Show package version
 
@@ -73,6 +76,9 @@ npx @aleygues/mdkb build --src docs --out build
 
 # Start dev server on a custom port
 npx @aleygues/mdkb dev --src src --port 3000
+
+# Start interactive review mode
+npx @aleygues/mdkb review --src src --reviews reviews
 
 # Preview the compiled dist/ folder
 npx @aleygues/mdkb preview --out dist --port 4173
@@ -162,6 +168,21 @@ flowchart LR
 ### Image Zoom (Lightbox)
 
 Any standalone Markdown image (`![Alt caption](/path/to/image.png)`) can be clicked to open a full-screen lightbox modal with its caption (`Esc` or backdrop click to close).
+
+## Interactive Review Mode (`mdkb review`)
+
+Launch your documentation in review mode to collect structured feedback directly in the browser:
+
+```bash
+npx @aleygues/mdkb review
+```
+
+- **Highlight any text** on a documentation page (including titles, headings, paragraphs, code blocks, callouts, tables, and pagination) or inside the sidebar menu, then click **Add comment**.
+- **Select an image or Mermaid diagram** directly (or via its comment button) to annotate visual elements.
+- **Select any menu category or item** directly via its hover comment icon or text highlight.
+- **View, edit, and delete** existing comments directly from inline yellow highlights/badges or the **Review comments** drawer.
+- Each comment is stored in `reviews/review_<YYYY-MM-DD_HH-MM-SS>.md` containing YAML metadata (`sourceFile`, `route`, `scope`, `targetType`, `selectedText`, context) and the comment text under `## Comment`.
+- The `reviews/` directory is automatically ignored during Markdown indexing, MiniSearch index generation, and static builds.
 
 ## Example Project
 

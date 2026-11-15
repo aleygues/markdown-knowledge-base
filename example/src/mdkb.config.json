@@ -20,7 +20,8 @@
         { "label": "Configuration (mdkb.config.json)", "link": "/guides/configuration" },
         { "label": "Markdown Features", "link": "/guides/markdown-features" },
         { "label": "Search & SEO", "link": "/guides/search-and-seo" },
-        { "label": "Docker & Nginx Deployment", "link": "/guides/deployment" }
+        { "label": "Docker & Nginx Deployment", "link": "/guides/deployment" },
+        { "label": "Interactive Review Mode", "link": "/guides/review-mode" }
       ]
     },
     {

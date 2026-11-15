@@ -51,6 +51,38 @@ export interface MdkbTranslations {
   backToHome: string
   searchDocs: string
   notFoundSeoTitle: string
+  review: {
+    modeBadge: string
+    hint: string
+    commentsCount: (count: number) => string
+    openPanel: string
+    panelTitle: string
+    currentPageSection: string
+    menuSection: string
+    otherPagesSection: string
+    noCommentsYet: string
+    addComment: string
+    editComment: string
+    deleteComment: string
+    commentPlaceholder: string
+    save: string
+    cancel: string
+    close: string
+    edit: string
+    delete: string
+    confirmDelete: string
+    commentImage: string
+    commentDiagram: string
+    commentMenuItem: string
+    targetText: string
+    targetImage: string
+    targetMermaid: string
+    targetMenu: string
+    saving: string
+    saveError: string
+    openRoute: string
+    fileLabel: string
+  }
 }
 
 const TRANSLATIONS: Record<MdkbLocale, MdkbTranslations> = {
@@ -105,6 +137,38 @@ const TRANSLATIONS: Record<MdkbLocale, MdkbTranslations> = {
     backToHome: 'Back to Home',
     searchDocs: 'Search docs',
     notFoundSeoTitle: 'Page Not Found',
+    review: {
+      modeBadge: 'Review Mode',
+      hint: 'Highlight any text, click an image/diagram, or pick a menu entry to comment.',
+      commentsCount: (count) => `${count} ${count === 1 ? 'comment' : 'comments'}`,
+      openPanel: 'Review comments',
+      panelTitle: 'Review Comments',
+      currentPageSection: 'Current page',
+      menuSection: 'Navigation menu',
+      otherPagesSection: 'Other pages',
+      noCommentsYet: 'No review comments yet. Select text, an image, a Mermaid diagram, or a menu item to leave feedback.',
+      addComment: 'Add comment',
+      editComment: 'Edit comment',
+      deleteComment: 'Delete comment',
+      commentPlaceholder: 'Write your review comment…',
+      save: 'Save',
+      cancel: 'Cancel',
+      close: 'Close',
+      edit: 'Edit',
+      delete: 'Delete',
+      confirmDelete: 'Confirm delete',
+      commentImage: 'Comment image',
+      commentDiagram: 'Comment diagram',
+      commentMenuItem: 'Comment menu item',
+      targetText: 'Text',
+      targetImage: 'Image',
+      targetMermaid: 'Diagram',
+      targetMenu: 'Menu',
+      saving: 'Saving…',
+      saveError: 'Failed to save review comment.',
+      openRoute: 'Go to page',
+      fileLabel: 'File',
+    },
   },
   fr: {
     locale: 'fr',
@@ -159,6 +223,39 @@ const TRANSLATIONS: Record<MdkbLocale, MdkbTranslations> = {
     backToHome: 'Retour à l’accueil',
     searchDocs: 'Rechercher',
     notFoundSeoTitle: 'Page introuvable',
+    review: {
+      modeBadge: 'Mode Revue',
+      hint: 'Surlignez un texte, cliquez sur une image/un schéma ou un élément du menu pour commenter.',
+      commentsCount: (count) => `${count} ${count <= 1 ? 'commentaire' : 'commentaires'}`,
+      openPanel: 'Commentaires de revue',
+      panelTitle: 'Commentaires de revue',
+      currentPageSection: 'Page actuelle',
+      menuSection: 'Menu de navigation',
+      otherPagesSection: 'Autres pages',
+      noCommentsYet:
+        'Aucun commentaire pour le moment. Surlignez un texte, sélectionnez une image, un schéma Mermaid ou un élément du menu pour commenter.',
+      addComment: 'Ajouter un commentaire',
+      editComment: 'Modifier le commentaire',
+      deleteComment: 'Supprimer le commentaire',
+      commentPlaceholder: 'Saisissez votre commentaire de revue…',
+      save: 'Enregistrer',
+      cancel: 'Annuler',
+      close: 'Fermer',
+      edit: 'Modifier',
+      delete: 'Supprimer',
+      confirmDelete: 'Confirmer la suppression',
+      commentImage: 'Commenter l’image',
+      commentDiagram: 'Commenter le schéma',
+      commentMenuItem: 'Commenter l’élément du menu',
+      targetText: 'Texte',
+      targetImage: 'Image',
+      targetMermaid: 'Schéma',
+      targetMenu: 'Menu',
+      saving: 'Enregistrement…',
+      saveError: 'Impossible d’enregistrer le commentaire de revue.',
+      openRoute: 'Aller à la page',
+      fileLabel: 'Fichier',
+    },
   },
 }
 

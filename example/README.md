@@ -25,11 +25,13 @@ cd example
 npx @aleygues/mdkb build
 ```
 
-Or run the development / preview server:
+Or run the development, review, or preview server:
 
 ```bash
 cd example
 npx @aleygues/mdkb dev
+# launch interactive review mode (saves review_*.md files in example/reviews/):
+npx @aleygues/mdkb review
 # or after building:
 npx @aleygues/mdkb preview
 ```

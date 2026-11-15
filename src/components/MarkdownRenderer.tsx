@@ -10,7 +10,7 @@ import {
   Separator,
   Text,
 } from '@chakra-ui/react'
-import { AlertTriangle, Check, Copy, ExternalLink, Info, ShieldAlert, ZoomIn } from 'lucide-react'
+import { AlertTriangle, Check, Copy, ExternalLink, Info, MessageSquarePlus, ShieldAlert, ZoomIn } from 'lucide-react'
 import {
   createContext,
   isValidElement,
@@ -29,6 +29,7 @@ import { visit } from 'unist-util-visit'
 import { resolveAssetUrl } from '../lib/baseUrl.ts'
 import type { ColorScheme } from '../lib/colorScheme.ts'
 import type { MdkbTranslations } from '../lib/i18n.ts'
+import { dispatchReviewSelect } from '../lib/reviewEvents.ts'
 import { createHeadingSlugger } from '../lib/slugger.ts'
 import { ImageLightbox, type LightboxImage } from './ImageLightbox.tsx'
 
@@ -272,6 +273,7 @@ function CodeBlock({
         bg={{ base: 'gray.800', _dark: 'gray.900' }}
         borderBottomWidth="1px"
         borderColor="whiteAlpha.200"
+        data-review-ignore="true"
       >
         <Text fontSize="xs" fontFamily="mono" color="gray.300" textTransform="lowercase">
           {language || 'text'}
@@ -300,11 +302,17 @@ function ZoomableImage({
   alt,
   t,
   onZoom,
+  reviewMode,
+  currentRoute,
+  sourceFile,
 }: {
   src?: string
   alt?: string
   t: MdkbTranslations
   onZoom: (img: LightboxImage) => void
+  reviewMode?: boolean
+  currentRoute: string
+  sourceFile?: string
 }) {
   const insideLink = useContext(InsideLinkContext)
 
@@ -323,53 +331,150 @@ function ZoomableImage({
   )
 
   if (insideLink) {
-    return <Box my={5}>{imageElement}</Box>
+    return (
+      <Box as="span" display="block" my={5}>
+        {imageElement}
+      </Box>
+    )
+  }
+
+  const triggerReview = (el: HTMLElement) => {
+    const allImages = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-review-scope="page"] [data-review-target="image"]')
+    )
+    const sameSrc = allImages.filter((item) => item.getAttribute('data-review-src') === src)
+    const occurrenceIndex = Math.max(0, sameSrc.indexOf(el))
+    dispatchReviewSelect({
+      input: {
+        route: currentRoute || '/',
+        sourceFile: sourceFile || '',
+        scope: 'page',
+        targetType: 'image',
+        selectedText: alt?.trim() || src,
+        targetSrc: src,
+        elementTag: 'img',
+        occurrenceIndex,
+      },
+      anchorRect: el.getBoundingClientRect(),
+    })
   }
 
   return (
-    <Box my={5}>
-      <chakra.button
-        type="button"
-        onClick={() => onZoom({ src, alt: alt ?? '' })}
-        aria-label={alt ? `${alt} — ${t.zoomImage}` : t.zoomImage}
-        title={t.zoomImage}
-        cursor="zoom-in"
+    <Box as="span" display="block" my={5}>
+      <Box
+        as="span"
         position="relative"
         display="inline-block"
         maxW="100%"
-        p={0}
-        border="none"
-        bg="transparent"
-        borderRadius="lg"
-        className="group"
-        _focusVisible={{
-          outline: '2px solid var(--mdkb-primary)',
-          outlineOffset: '3px',
-        }}
+        data-review-target="image"
+        data-review-src={src}
+        data-review-alt={alt ?? ''}
         css={{
-          '&:hover .mdkb-zoom-badge, &:focus-visible .mdkb-zoom-badge': {
+          '&:hover .mdkb-zoom-badge, &:focus-within .mdkb-zoom-badge': {
             opacity: 1,
           },
         }}
       >
-        {imageElement}
-        <Box
-          className="mdkb-zoom-badge"
-          position="absolute"
-          top={2.5}
-          right={2.5}
-          p={1.5}
-          borderRadius="md"
-          bg="blackAlpha.700"
-          color="white"
-          opacity={0}
-          transition="opacity 0.15s ease"
-          pointerEvents="none"
-          aria-hidden="true"
+        <chakra.button
+          type="button"
+          onClick={(e) => {
+            if (reviewMode) {
+              const wrapper = e.currentTarget.closest<HTMLElement>('[data-review-target="image"]')
+              if (wrapper) triggerReview(wrapper)
+              return
+            }
+            onZoom({ src, alt: alt ?? '' })
+          }}
+          aria-label={
+            reviewMode
+              ? `${alt || src} — ${t.review.commentImage}`
+              : alt
+                ? `${alt} — ${t.zoomImage}`
+                : t.zoomImage
+          }
+          title={reviewMode ? t.review.commentImage : t.zoomImage}
+          cursor={reviewMode ? 'pointer' : 'zoom-in'}
+          display="block"
+          maxW="100%"
+          p={0}
+          border="none"
+          bg="transparent"
+          borderRadius="lg"
+          _focusVisible={{
+            outline: '2px solid var(--mdkb-primary)',
+            outlineOffset: '3px',
+          }}
         >
-          <ZoomIn size={16} />
-        </Box>
-      </chakra.button>
+          {imageElement}
+        </chakra.button>
+
+        {reviewMode ? (
+          <Box
+            as="span"
+            display="inline-flex"
+            alignItems="center"
+            className="mdkb-zoom-badge"
+            position="absolute"
+            top={2.5}
+            right={2.5}
+            gap={1.5}
+            opacity={0.95}
+            transition="opacity 0.15s ease"
+            data-review-ignore="true"
+          >
+            <Button
+              size="xs"
+              colorPalette="yellow"
+              variant="solid"
+              onClick={(e) => {
+                e.stopPropagation()
+                const wrapper = e.currentTarget.closest<HTMLElement>('[data-review-target="image"]')
+                if (wrapper) triggerReview(wrapper)
+              }}
+              aria-label={t.review.commentImage}
+            >
+              <MessageSquarePlus size={14} aria-hidden="true" />
+              {t.review.commentImage}
+            </Button>
+            <chakra.button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onZoom({ src, alt: alt ?? '' })
+              }}
+              aria-label={t.zoomImage}
+              title={t.zoomImage}
+              p={1.5}
+              borderRadius="md"
+              bg="blackAlpha.700"
+              color="white"
+              cursor="zoom-in"
+              border="none"
+            >
+              <ZoomIn size={15} aria-hidden="true" />
+            </chakra.button>
+          </Box>
+        ) : (
+          <Box
+            as="span"
+            display="inline-flex"
+            className="mdkb-zoom-badge"
+            position="absolute"
+            top={2.5}
+            right={2.5}
+            p={1.5}
+            borderRadius="md"
+            bg="blackAlpha.700"
+            color="white"
+            opacity={0}
+            transition="opacity 0.15s ease"
+            pointerEvents="none"
+            aria-hidden="true"
+          >
+            <ZoomIn size={16} />
+          </Box>
+        )}
+      </Box>
     </Box>
   )
 }
@@ -380,6 +485,8 @@ interface MarkdownRendererProps {
   assetBase: string
   colorScheme: ColorScheme
   t: MdkbTranslations
+  reviewMode?: boolean
+  sourceFile?: string
 }
 
 export function MarkdownRenderer({
@@ -388,6 +495,8 @@ export function MarkdownRenderer({
   assetBase,
   colorScheme,
   t,
+  reviewMode,
+  sourceFile,
 }: MarkdownRendererProps) {
   const [lightboxImage, setLightboxImage] = useState<LightboxImage | null>(null)
 
@@ -583,7 +692,14 @@ export function MarkdownRenderer({
                   </Box>
                 }
               >
-                <LazyMermaidDiagram code={rawCode} colorScheme={colorScheme} t={t} />
+                <LazyMermaidDiagram
+                  code={rawCode}
+                  colorScheme={colorScheme}
+                  t={t}
+                  reviewMode={reviewMode}
+                  sourceFile={sourceFile}
+                  route={currentRoute}
+                />
               </Suspense>
             )
           }
@@ -655,13 +771,16 @@ export function MarkdownRenderer({
             alt={alt}
             t={t}
             onZoom={setLightboxImage}
+            reviewMode={reviewMode}
+            currentRoute={currentRoute}
+            sourceFile={sourceFile}
           />
         )
       },
     }
 
     return customComponents as unknown as Components
-  }, [assetBase, colorScheme, currentRoute, t])
+  }, [assetBase, colorScheme, currentRoute, reviewMode, sourceFile, t])
 
   return (
     <Box className="mdkb-markdown">

@@ -1,17 +1,28 @@
 import { Alert, Box, Button, HStack, Text } from '@chakra-ui/react'
-import { AlertTriangle, Check, Copy } from 'lucide-react'
+import { AlertTriangle, Check, Copy, MessageSquarePlus } from 'lucide-react'
 import mermaid from 'mermaid'
 import { useEffect, useId, useRef, useState } from 'react'
 import type { ColorScheme } from '../lib/colorScheme.ts'
 import type { MdkbTranslations } from '../lib/i18n.ts'
+import { dispatchReviewSelect } from '../lib/reviewEvents.ts'
 
 export interface MermaidDiagramProps {
   code: string
   colorScheme: ColorScheme
   t: MdkbTranslations
+  reviewMode?: boolean
+  sourceFile?: string
+  route?: string
 }
 
-export default function MermaidDiagram({ code, colorScheme, t }: MermaidDiagramProps) {
+export default function MermaidDiagram({
+  code,
+  colorScheme,
+  t,
+  reviewMode,
+  sourceFile,
+  route,
+}: MermaidDiagramProps) {
   const reactId = useId()
   const renderSeqRef = useRef(0)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -99,6 +110,31 @@ export default function MermaidDiagram({ code, colorScheme, t }: MermaidDiagramP
     )
   }
 
+  const handleSelectForReview = (targetEl: HTMLElement | null) => {
+    if (!reviewMode || !targetEl) return
+    const diagrams = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-review-scope="page"] [data-review-target="mermaid"]')
+    )
+    const snippet = code.slice(0, 200)
+    const sameDiagrams = diagrams.filter(
+      (el) => el.getAttribute('data-review-mermaid') === snippet
+    )
+    const occurrenceIndex = Math.max(0, sameDiagrams.indexOf(targetEl))
+
+    dispatchReviewSelect({
+      input: {
+        route: route || '/',
+        sourceFile: sourceFile || '',
+        scope: 'page',
+        targetType: 'mermaid',
+        selectedText: code,
+        elementTag: 'svg',
+        occurrenceIndex,
+      },
+      anchorRect: targetEl.getBoundingClientRect(),
+    })
+  }
+
   return (
     <Box
       my={5}
@@ -107,6 +143,7 @@ export default function MermaidDiagram({ code, colorScheme, t }: MermaidDiagramP
       borderColor="border.muted"
       overflow="hidden"
       bg={{ base: 'white', _dark: 'gray.900' }}
+      data-mdkb-mermaid-card="true"
     >
       <HStack
         justify="space-between"
@@ -115,28 +152,59 @@ export default function MermaidDiagram({ code, colorScheme, t }: MermaidDiagramP
         bg="bg.subtle"
         borderBottomWidth="1px"
         borderColor="border.subtle"
+        data-review-ignore="true"
       >
         <Text fontSize="xs" fontFamily="mono" color="fg.muted">
           mermaid
         </Text>
-        <Button
-          size="xs"
-          variant="ghost"
-          color="fg.muted"
-          _hover={{ color: 'fg', bg: 'bg.muted' }}
-          onClick={handleCopy}
-          aria-label={copied ? t.copiedCodeAriaLabel : t.copyCodeAriaLabel}
-        >
-          {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
-          {copied ? t.copiedCode : t.copyCode}
-        </Button>
+        <HStack gap={1.5}>
+          {reviewMode && (
+            <Button
+              size="xs"
+              variant="subtle"
+              colorPalette="yellow"
+              onClick={(e) => {
+                const wrapper = e.currentTarget
+                  .closest('[data-mdkb-mermaid-card]')
+                  ?.querySelector<HTMLElement>('[data-review-target="mermaid"]')
+                handleSelectForReview(wrapper ?? null)
+              }}
+              aria-label={t.review.commentDiagram}
+            >
+              <MessageSquarePlus size={14} aria-hidden="true" />
+              {t.review.commentDiagram}
+            </Button>
+          )}
+          <Button
+            size="xs"
+            variant="ghost"
+            color="fg.muted"
+            _hover={{ color: 'fg', bg: 'bg.muted' }}
+            onClick={handleCopy}
+            aria-label={copied ? t.copiedCodeAriaLabel : t.copyCodeAriaLabel}
+          >
+            {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+            {copied ? t.copiedCode : t.copyCode}
+          </Button>
+        </HStack>
       </HStack>
 
-      <Box p={4} overflowX="auto" minH="80px">
+      <Box p={4} overflowX="auto" minH="80px" data-mdkb-mermaid-root="true">
         {svg ? (
           <Box
             ref={containerRef}
             className="mdkb-mermaid-diagram"
+            data-review-target="mermaid"
+            data-review-mermaid={code.slice(0, 200)}
+            cursor={reviewMode ? 'pointer' : undefined}
+            onClick={
+              reviewMode
+                ? (e) => {
+                    e.stopPropagation()
+                    handleSelectForReview(e.currentTarget)
+                  }
+                : undefined
+            }
             display="flex"
             justifyContent="center"
             css={{

@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import type { IncomingMessage } from 'node:http'
 import path from 'node:path'
 import { load as loadYaml } from 'js-yaml'
 import MiniSearch from 'minisearch'
@@ -6,6 +7,7 @@ import type { Plugin, ResolvedConfig, ViteDevServer } from 'vite'
 import { MINISEARCH_OPTIONS } from '../src/lib/searchConfig.ts'
 import { createHeadingSlugger } from '../src/lib/slugger.ts'
 import type {
+  CreateReviewInput,
   DocHeading,
   DocPage,
   MdkbConfig,
@@ -15,6 +17,7 @@ import type {
   PageNavItem,
   SearchDocument,
 } from '../src/types/mdkb.ts'
+import { createReview, deleteReview, listReviews, updateReview } from './reviewStore.ts'
 
 const VIRTUAL_MODULE_ID = 'virtual:mdkb-data'
 const RESOLVED_VIRTUAL_MODULE_ID = '\0' + VIRTUAL_MODULE_ID
@@ -24,6 +27,8 @@ export interface MdkbPluginOptions {
   configPath?: string
   cwd?: string
   userPublicDir?: string
+  reviewMode?: boolean
+  reviewsDir?: string
 }
 
 interface RawFrontmatterNav {
@@ -250,7 +255,19 @@ export function loadMdkbConfig(
   return DEFAULT_CONFIG
 }
 
-function collectMarkdownFiles(dir: string): string[] {
+function isIgnoredReviewDir(dirName: string, fullPath: string, reviewsDir?: string): boolean {
+  if (dirName === 'reviews') return true
+  if (reviewsDir) {
+    const resolvedFull = path.resolve(fullPath)
+    const resolvedReviews = path.resolve(reviewsDir)
+    if (resolvedFull === resolvedReviews || resolvedFull.startsWith(resolvedReviews + path.sep)) {
+      return true
+    }
+  }
+  return false
+}
+
+function collectMarkdownFiles(dir: string, reviewsDir?: string): string[] {
   if (!fs.existsSync(dir)) return []
   const entries = fs.readdirSync(dir, { withFileTypes: true })
   const files: string[] = []
@@ -258,7 +275,8 @@ function collectMarkdownFiles(dir: string): string[] {
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name)
     if (entry.isDirectory()) {
-      files.push(...collectMarkdownFiles(fullPath))
+      if (isIgnoredReviewDir(entry.name, fullPath, reviewsDir)) continue
+      files.push(...collectMarkdownFiles(fullPath, reviewsDir))
     } else if (entry.isFile() && /\.md$/i.test(entry.name)) {
       files.push(fullPath)
     }
@@ -270,7 +288,8 @@ function collectMarkdownFiles(dir: string): string[] {
 function copyNonMarkdownAssets(
   srcDir: string,
   outDir: string,
-  skipNames: Set<string>
+  skipNames: Set<string>,
+  reviewsDir?: string
 ): void {
   if (!fs.existsSync(srcDir)) return
   const entries = fs.readdirSync(srcDir, { withFileTypes: true })
@@ -281,7 +300,8 @@ function copyNonMarkdownAssets(
     const destPath = path.join(outDir, entry.name)
 
     if (entry.isDirectory()) {
-      copyNonMarkdownAssets(srcPath, destPath, new Set())
+      if (isIgnoredReviewDir(entry.name, srcPath, reviewsDir)) continue
+      copyNonMarkdownAssets(srcPath, destPath, new Set(), reviewsDir)
     } else if (entry.isFile() && !/\.md$/i.test(entry.name)) {
       fs.mkdirSync(path.dirname(destPath), { recursive: true })
       fs.copyFileSync(srcPath, destPath)
@@ -453,10 +473,15 @@ function formatUpdatedAt(value: unknown): string | undefined {
 function buildMdkbData(
   fallbackRootDir: string,
   docsDir: string,
-  configPath?: string
+  configPath?: string,
+  options?: { reviewMode?: boolean; reviewsDir?: string }
 ): MdkbData {
+  const resolvedConfigPath = resolveConfigFile(docsDir, configPath, fallbackRootDir)
+  const configFile = resolvedConfigPath
+    ? path.relative(fallbackRootDir, resolvedConfigPath).replace(/\\/g, '/')
+    : path.relative(fallbackRootDir, path.join(docsDir, 'mdkb.config.json')).replace(/\\/g, '/')
   const config = loadMdkbConfig(fallbackRootDir, { docsDir, configPath })
-  const files = collectMarkdownFiles(docsDir)
+  const files = collectMarkdownFiles(docsDir, options?.reviewsDir)
 
   const routeCategoryMap = new Map<string, string>()
   const flattenedMenu: MdkbMenuItem[] = []
@@ -520,6 +545,7 @@ function buildMdkbData(
       page: {
         route,
         filePath: path.relative(docsDir, filePath).replace(/\\/g, '/'),
+        sourceFile: path.relative(fallbackRootDir, filePath).replace(/\\/g, '/'),
         title,
         description,
         updatedAt,
@@ -606,6 +632,8 @@ function buildMdkbData(
 
   return {
     config,
+    configFile,
+    reviewMode: Boolean(options?.reviewMode),
     pages: pendingPages.map((p) => p.page),
     searchIndexJson: JSON.stringify(miniSearch),
     searchDocs,
@@ -693,6 +721,26 @@ export function mdkbPlugin(options: MdkbPluginOptions = {}): Plugin {
   const getFallbackConfigRoot = () =>
     options.cwd ? path.resolve(options.cwd) : rootDir
 
+  const getReviewsDir = () =>
+    options.reviewsDir
+      ? path.resolve(options.reviewsDir)
+      : path.join(getFallbackConfigRoot(), 'reviews')
+
+  const readJsonBody = (req: IncomingMessage): Promise<Record<string, unknown>> =>
+    new Promise((resolve, reject) => {
+      const chunks: Buffer[] = []
+      req.on('data', (chunk: Buffer) => chunks.push(chunk))
+      req.on('end', () => {
+        try {
+          const text = Buffer.concat(chunks).toString('utf-8').trim()
+          resolve(text ? (JSON.parse(text) as Record<string, unknown>) : {})
+        } catch (err) {
+          reject(err)
+        }
+      })
+      req.on('error', reject)
+    })
+
   return {
     name: 'vite-plugin-mdkb',
 
@@ -750,7 +798,10 @@ export function mdkbPlugin(options: MdkbPluginOptions = {}): Plugin {
 
     load(id) {
       if (id === RESOLVED_VIRTUAL_MODULE_ID) {
-        const data = buildMdkbData(getFallbackConfigRoot(), getDocsDir(), options.configPath)
+        const data = buildMdkbData(getFallbackConfigRoot(), getDocsDir(), options.configPath, {
+          reviewMode: options.reviewMode,
+          reviewsDir: getReviewsDir(),
+        })
         return `export default ${JSON.stringify(data)};`
       }
       return null
@@ -758,9 +809,113 @@ export function mdkbPlugin(options: MdkbPluginOptions = {}): Plugin {
 
     configureServer(server: ViteDevServer) {
       const docsDir = getDocsDir()
+      const reviewsDir = getReviewsDir()
       server.watcher.add(docsDir)
       if (options.configPath) {
         server.watcher.add(path.resolve(options.configPath))
+      }
+
+      if (options.reviewMode) {
+        server.middlewares.use(async (req, res, next) => {
+          const rawUrl = (req.url ?? '').split('?')[0]
+          const marker = '/__mdkb/reviews'
+          const markerIdx = rawUrl.indexOf(marker)
+          if (markerIdx === -1) return next()
+
+          const suffix = rawUrl.slice(markerIdx + marker.length)
+          const method = (req.method ?? 'GET').toUpperCase()
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+
+          try {
+            if (method === 'GET' && (!suffix || suffix === '/')) {
+              const reviews = listReviews(reviewsDir)
+              res.statusCode = 200
+              res.end(JSON.stringify({ reviews, reviewsDir }))
+              return
+            }
+
+            if (method === 'POST' && (!suffix || suffix === '/')) {
+              const body = await readJsonBody(req)
+              const comment = typeof body.comment === 'string' ? body.comment.trim() : ''
+              const selectedText =
+                typeof body.selectedText === 'string' ? body.selectedText : ''
+              if (!comment || !selectedText) {
+                res.statusCode = 400
+                res.end(JSON.stringify({ error: 'selectedText and comment are required.' }))
+                return
+              }
+              const input: CreateReviewInput = {
+                route: typeof body.route === 'string' ? body.route : '/',
+                sourceFile: typeof body.sourceFile === 'string' ? body.sourceFile : '',
+                scope: body.scope === 'menu' ? 'menu' : 'page',
+                targetType:
+                  body.targetType === 'image' ||
+                  body.targetType === 'mermaid' ||
+                  body.targetType === 'menu-item'
+                    ? body.targetType
+                    : 'text',
+                selectedText,
+                targetSrc: typeof body.targetSrc === 'string' ? body.targetSrc : undefined,
+                elementTag: typeof body.elementTag === 'string' ? body.elementTag : undefined,
+                contextBefore:
+                  typeof body.contextBefore === 'string' ? body.contextBefore : undefined,
+                contextAfter: typeof body.contextAfter === 'string' ? body.contextAfter : undefined,
+                occurrenceIndex:
+                  typeof body.occurrenceIndex === 'number' ? body.occurrenceIndex : undefined,
+                comment,
+              }
+              const review = createReview(reviewsDir, input)
+              res.statusCode = 201
+              res.end(JSON.stringify({ review }))
+              return
+            }
+
+            const idMatch = suffix.match(/^\/([^/]+)$/)
+            if (idMatch) {
+              const id = decodeURIComponent(idMatch[1])
+              if (method === 'PUT' || method === 'PATCH') {
+                const body = await readJsonBody(req)
+                const comment = typeof body.comment === 'string' ? body.comment.trim() : ''
+                if (!comment) {
+                  res.statusCode = 400
+                  res.end(JSON.stringify({ error: 'comment is required.' }))
+                  return
+                }
+                const review = updateReview(reviewsDir, id, comment)
+                if (!review) {
+                  res.statusCode = 404
+                  res.end(JSON.stringify({ error: 'Review not found.' }))
+                  return
+                }
+                res.statusCode = 200
+                res.end(JSON.stringify({ review }))
+                return
+              }
+
+              if (method === 'DELETE') {
+                const deleted = deleteReview(reviewsDir, id)
+                if (!deleted) {
+                  res.statusCode = 404
+                  res.end(JSON.stringify({ error: 'Review not found.' }))
+                  return
+                }
+                res.statusCode = 200
+                res.end(JSON.stringify({ deleted: true, id }))
+                return
+              }
+            }
+
+            res.statusCode = 405
+            res.end(JSON.stringify({ error: 'Method not allowed.' }))
+          } catch (err) {
+            res.statusCode = 500
+            res.end(
+              JSON.stringify({
+                error: err instanceof Error ? err.message : 'Internal review server error.',
+              })
+            )
+          }
+        })
       }
 
       // Serve user static assets from userPublicDir and non-md assets from docsDir
@@ -794,6 +949,13 @@ export function mdkbPlugin(options: MdkbPluginOptions = {}): Plugin {
 
       const reloadDocs = (file: string) => {
         const normalized = path.resolve(file)
+        if (
+          normalized === reviewsDir ||
+          normalized.startsWith(reviewsDir + path.sep) ||
+          normalized.split(path.sep).includes('reviews')
+        ) {
+          return
+        }
         const configMatch =
           options.configPath && normalized === path.resolve(options.configPath)
         if (
@@ -822,14 +984,16 @@ export function mdkbPlugin(options: MdkbPluginOptions = {}): Plugin {
       if (!fs.existsSync(indexHtmlPath)) return
 
       const docsDir = getDocsDir()
-      const data = buildMdkbData(getFallbackConfigRoot(), docsDir, options.configPath)
+      const data = buildMdkbData(getFallbackConfigRoot(), docsDir, options.configPath, {
+        reviewsDir: getReviewsDir(),
+      })
       const { origin, routerBasename } = parseBaseUrl(data.config.baseUrl)
       const baseHtml = fs.readFileSync(indexHtmlPath, 'utf-8')
 
       // Copy user static assets from docsDir (non-md, non-config) and userPublicDir
-      copyNonMarkdownAssets(docsDir, outDir, new Set(['mdkb.config.json']))
+      copyNonMarkdownAssets(docsDir, outDir, new Set(['mdkb.config.json']), getReviewsDir())
       if (options.userPublicDir && fs.existsSync(options.userPublicDir)) {
-        copyNonMarkdownAssets(options.userPublicDir, outDir, new Set())
+        copyNonMarkdownAssets(options.userPublicDir, outDir, new Set(), getReviewsDir())
       }
 
       // Enhance root index.html for home route

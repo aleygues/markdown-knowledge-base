@@ -1,6 +1,6 @@
 {
   "name": "@aleygues/mdkb",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Simple, fast static documentation web app generator from Markdown files using React, TypeScript, Vite, Chakra UI, and MiniSearch.",
   "license": "MIT",
   "type": "module",

@@ -11,6 +11,8 @@ node_modules
 dist
 dist-cli
 example/dist
+reviews
+example/reviews
 *.local
 *.tgz
 

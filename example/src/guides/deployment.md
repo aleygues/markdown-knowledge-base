@@ -5,7 +5,9 @@ updatedAt: 2026-11-13
 previous:
   label: Search & SEO
   link: /guides/search-and-seo
-next: false
+next:
+  label: Interactive Review Mode
+  link: /guides/review-mode
 ---
 
 Because `yarn build` produces pure static files in `dist/`, **mdkb** can be deployed to any static host, CDN, or containerized Nginx server.

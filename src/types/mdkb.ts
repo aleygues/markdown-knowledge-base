@@ -32,9 +32,45 @@ export interface DocHeading {
   id: string
 }
 
+export type ReviewScope = 'page' | 'menu'
+export type ReviewTargetType = 'text' | 'image' | 'mermaid' | 'menu-item'
+
+export interface ReviewComment {
+  id: string
+  fileName: string
+  createdAt: string
+  updatedAt: string
+  route: string
+  sourceFile: string
+  scope: ReviewScope
+  targetType: ReviewTargetType
+  selectedText: string
+  targetSrc?: string
+  elementTag?: string
+  contextBefore?: string
+  contextAfter?: string
+  occurrenceIndex?: number
+  comment: string
+}
+
+export interface CreateReviewInput {
+  route: string
+  sourceFile: string
+  scope: ReviewScope
+  targetType: ReviewTargetType
+  selectedText: string
+  targetSrc?: string
+  elementTag?: string
+  contextBefore?: string
+  contextAfter?: string
+  occurrenceIndex?: number
+  comment: string
+}
+
 export interface DocPage {
   route: string
   filePath: string
+  sourceFile?: string
   title: string
   description?: string
   updatedAt?: string
@@ -58,6 +94,8 @@ export interface SearchDocument {
 
 export interface MdkbData {
   config: MdkbConfig
+  configFile?: string
+  reviewMode?: boolean
   pages: DocPage[]
   searchIndexJson: string
   searchDocs: Record<string, SearchDocument>

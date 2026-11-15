@@ -10,7 +10,7 @@ import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import type { ColorScheme } from '../lib/colorScheme.ts'
 import type { MdkbTranslations } from '../lib/i18n.ts'
-import type { DocHeading, MdkbConfig, SearchDocument } from '../types/mdkb.ts'
+import type { DocHeading, DocPage, MdkbConfig, SearchDocument } from '../types/mdkb.ts'
 import { Header } from './Header.tsx'
 import { SidebarNav } from './SidebarNav.tsx'
 import { TableOfContents } from './TableOfContents.tsx'
@@ -18,9 +18,13 @@ import { TableOfContents } from './TableOfContents.tsx'
 const LazySearchDialog = lazy(() =>
   import('./SearchDialog.tsx').then((m) => ({ default: m.SearchDialog }))
 )
+const LazyReviewOverlay = lazy(() => import('./ReviewOverlay.tsx'))
 
 interface DocsLayoutProps {
   config: MdkbConfig
+  configFile?: string
+  reviewMode?: boolean
+  currentPage?: DocPage
   assetBase: string
   colorScheme: ColorScheme
   onToggleColorScheme: () => void
@@ -36,6 +40,9 @@ interface DocsLayoutProps {
 
 export function DocsLayout({
   config,
+  configFile,
+  reviewMode,
+  currentPage,
   assetBase,
   colorScheme,
   onToggleColorScheme,
@@ -94,6 +101,17 @@ export function DocsLayout({
         {t.skipToContent}
       </a>
 
+      {reviewMode && (
+        <Suspense fallback={null}>
+          <LazyReviewOverlay
+            currentRoute={currentPage?.route ?? location.pathname}
+            currentSourceFile={currentPage?.sourceFile ?? currentPage?.filePath ?? ''}
+            configFile={configFile ?? 'mdkb.config.json'}
+            t={t}
+          />
+        </Suspense>
+      )}
+
       <Header
         config={config}
         assetBase={assetBase}
@@ -123,8 +141,20 @@ export function DocsLayout({
           py={8}
           pe={4}
         >
-          <Box position="sticky" top="88px" maxH="calc(100vh - 110px)" overflowY="auto">
-            <SidebarNav menu={config.menu} t={t} />
+          <Box
+            position="sticky"
+            top="88px"
+            maxH="calc(100vh - 110px)"
+            overflowY="auto"
+            data-review-scope="menu"
+          >
+            <SidebarNav
+              menu={config.menu}
+              t={t}
+              reviewMode={reviewMode}
+              configFile={configFile}
+            />
+            {reviewMode && <Box data-review-ui-layer="menu" />}
           </Box>
         </Box>
 
@@ -186,6 +216,8 @@ export function DocsLayout({
                 <SidebarNav
                   menu={config.menu}
                   t={t}
+                  reviewMode={reviewMode}
+                  configFile={configFile}
                   onNavigate={() => setMobileMenuOpen(false)}
                 />
               </Drawer.Body>

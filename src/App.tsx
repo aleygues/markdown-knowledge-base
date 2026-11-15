@@ -1,4 +1,4 @@
-import { ChakraProvider } from '@chakra-ui/react'
+import { Box, ChakraProvider } from '@chakra-ui/react'
 import mdkbData from 'virtual:mdkb-data'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router'
@@ -22,6 +22,7 @@ function DocPageView({
   origin,
   colorScheme,
   t,
+  reviewMode,
 }: {
   page: DocPage
   assetBase: string
@@ -29,6 +30,7 @@ function DocPageView({
   origin: string
   colorScheme: ColorScheme
   t: MdkbTranslations
+  reviewMode?: boolean
 }) {
   return (
     <>
@@ -39,17 +41,22 @@ function DocPageView({
         origin={origin}
         t={t}
       />
-      <article aria-labelledby="page-title">
-        <PageHeader page={page} t={t} />
-        <MarkdownRenderer
-          content={page.body}
-          currentRoute={page.route}
-          assetBase={assetBase}
-          colorScheme={colorScheme}
-          t={t}
-        />
-        <PageFooterNav previous={page.previous} next={page.next} t={t} />
-      </article>
+      <Box position="relative" data-review-scope="page">
+        <article aria-labelledby="page-title">
+          <PageHeader page={page} t={t} />
+          <MarkdownRenderer
+            content={page.body}
+            currentRoute={page.route}
+            assetBase={assetBase}
+            colorScheme={colorScheme}
+            t={t}
+            reviewMode={reviewMode}
+            sourceFile={page.sourceFile ?? page.filePath}
+          />
+          <PageFooterNav previous={page.previous} next={page.next} t={t} />
+        </article>
+        {reviewMode && <Box data-review-ui-layer="page" />}
+      </Box>
     </>
   )
 }
@@ -91,6 +98,9 @@ function DocsRouterContent({
           element={
             <DocsLayout
               config={mdkbData.config}
+              configFile={mdkbData.configFile}
+              reviewMode={mdkbData.reviewMode}
+              currentPage={page}
               assetBase={assetBase}
               colorScheme={colorScheme}
               onToggleColorScheme={toggleColorScheme}
@@ -109,6 +119,7 @@ function DocsRouterContent({
                 origin={origin}
                 colorScheme={colorScheme}
                 t={t}
+                reviewMode={mdkbData.reviewMode}
               />
             </DocsLayout>
           }
@@ -119,6 +130,8 @@ function DocsRouterContent({
         element={
           <DocsLayout
             config={mdkbData.config}
+            configFile={mdkbData.configFile}
+            reviewMode={mdkbData.reviewMode}
             assetBase={assetBase}
             colorScheme={colorScheme}
             onToggleColorScheme={toggleColorScheme}

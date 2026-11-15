@@ -30,15 +30,17 @@ Usage:
 Commands:
   build                 Build the static documentation site
   dev                   Start the local development server with HMR
+  review                Start the documentation in interactive review mode
   preview               Preview the built static site locally
 
 Options:
   -s, --src <dir>       Source folder containing Markdown files & mdkb.config.json (default: "src")
   -o, --out <dir>       Output directory for the built site (default: "dist")
       --out-dir <dir>   Alias for --out
+  -r, --reviews <dir>   Directory where review_*.md files are stored (default: "reviews")
   -c, --config <file>   Path to mdkb.config.json (default: "<src>/mdkb.config.json")
-  -p, --port <port>     Port for dev or preview server
-      --host <host>     Host to bind dev or preview server
+  -p, --port <port>     Port for dev, review, or preview server
+      --host <host>     Host to bind dev, review, or preview server
   -h, --help            Show this help message
   -v, --version         Show version number
 
@@ -46,6 +48,7 @@ Examples:
   npx @aleygues/mdkb build
   npx @aleygues/mdkb build --src docs --out build
   npx @aleygues/mdkb dev --src src --port 3000
+  npx @aleygues/mdkb review --src src --reviews reviews
 `)
 }
 
@@ -72,6 +75,7 @@ async function run(): Promise<void> {
       out: { type: 'string', short: 'o' },
       'out-dir': { type: 'string' },
       outDir: { type: 'string' },
+      reviews: { type: 'string', short: 'r' },
       config: { type: 'string', short: 'c' },
       port: { type: 'string', short: 'p' },
       host: { type: 'string' },
@@ -94,7 +98,7 @@ async function run(): Promise<void> {
     return
   }
 
-  if (command !== 'build' && command !== 'dev' && command !== 'preview') {
+  if (command !== 'build' && command !== 'dev' && command !== 'review' && command !== 'preview') {
     console.error(`Unknown command: "${command}"\n`)
     printHelp()
     process.exit(1)
@@ -103,9 +107,11 @@ async function run(): Promise<void> {
   const cwd = process.cwd()
   const srcArg = values.src ?? 'src'
   const outArg = values.out ?? values['out-dir'] ?? values.outDir ?? 'dist'
+  const reviewsArg = values.reviews ?? 'reviews'
 
   const docsDir = path.resolve(cwd, srcArg)
   const outDir = path.resolve(cwd, outArg)
+  const reviewsDir = path.resolve(cwd, reviewsArg)
   const configPath = values.config ? path.resolve(cwd, values.config) : undefined
   const userPublicPath = path.join(cwd, 'public')
   const userPublicDir =
@@ -113,7 +119,7 @@ async function run(): Promise<void> {
       ? userPublicPath
       : undefined
 
-  if ((command === 'build' || command === 'dev') && !fs.existsSync(docsDir)) {
+  if ((command === 'build' || command === 'dev' || command === 'review') && !fs.existsSync(docsDir)) {
     console.error(
       `Error: Source directory not found: ${docsDir}\nCreate a "${srcArg}" directory with your Markdown files and mdkb.config.json, or pass --src <dir>.`
     )
@@ -145,6 +151,8 @@ async function run(): Promise<void> {
         configPath,
         cwd,
         userPublicDir,
+        reviewMode: command === 'review',
+        reviewsDir,
       }),
     ],
     build: {
@@ -168,7 +176,10 @@ async function run(): Promise<void> {
     return
   }
 
-  if (command === 'dev') {
+  if (command === 'dev' || command === 'review') {
+    if (command === 'review') {
+      console.log(`[mdkb] Starting review mode (docs: ${docsDir}, reviews: ${reviewsDir})`)
+    }
     const server = await createServer(viteConfig)
     await server.listen()
     server.printUrls()
