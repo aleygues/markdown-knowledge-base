@@ -2,16 +2,18 @@ import { Box, HStack, Text, VStack } from '@chakra-ui/react'
 import { ExternalLink } from 'lucide-react'
 import { NavLink } from 'react-router'
 import { isExternalUrl } from '../lib/baseUrl.ts'
+import type { MdkbTranslations } from '../lib/i18n.ts'
 import type { MdkbMenuCategory } from '../types/mdkb.ts'
 
 interface SidebarNavProps {
   menu: MdkbMenuCategory[]
+  t: MdkbTranslations
   onNavigate?: () => void
 }
 
-export function SidebarNav({ menu, onNavigate }: SidebarNavProps) {
+export function SidebarNav({ menu, t, onNavigate }: SidebarNavProps) {
   return (
-    <Box as="nav" aria-label="Documentation navigation">
+    <Box as="nav" aria-label={t.navAriaLabel}>
       <VStack align="stretch" gap={6}>
         {menu.map((section) => (
           <Box key={section.category}>

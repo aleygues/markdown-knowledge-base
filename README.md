@@ -5,10 +5,12 @@ A static documentation generator built with **React**, **TypeScript**, **Vite**,
 ## Features
 
 - **File-system Routing**: Routes mirror your Markdown folder structure (`index.md` maps to the folder base route, e.g. `guides/index.md` -> `/guides`).
-- **Pre-indexed Local Search**: Full-text search powered by **MiniSearch**, pre-indexed at build time (`Ctrl+K` / `Cmd+K` / `/`).
-- **Customizable Theme & Navigation**: Configure `primaryColor`, `secondaryColor`, `logo`, `baseUrl`, and sidebar `menu` entries in `mdkb.config.json`. Links starting with `http://` or `https://` are automatically treated as external links.
-- **Extended Markdown**: YAML frontmatter (`title`, `description`, `previous`, `next`, `updatedAt`), GFM, copyable code blocks, and callout boxes (`:::info`, `:::warning`, `:::danger`).
-- **Light & Dark Mode**: Automatic system preference detection with a persistent manual toggle.
+- **Pre-indexed Local Search**: Full-text search powered by **MiniSearch**, pre-indexed at build time (`Ctrl+K` / `Cmd+K` / `/`) and lazy-loaded on demand.
+- **Customizable Theme & Navigation**: Configure `primaryColor`, `secondaryColor`, `logo`, `baseUrl`, `locale`, and sidebar `menu` entries in `mdkb.config.json`. Links starting with `http://` or `https://` are automatically treated as external links.
+- **UI Internationalization (`locale`)**: Set `"locale": "fr"` (or `"en"`, default) in `mdkb.config.json` to localize all UI controls, date formatting, `<html lang>`, and `og:locale`.
+- **Extended Markdown**: YAML frontmatter (`title`, `description`, `previous`, `next`, `updatedAt`), GFM, copyable code blocks, callout boxes (`:::info`, `:::warning`, `:::danger`), **native Mermaid diagrams** (```` ```mermaid ````), and **click-to-zoom image Lightbox**.
+- **Light & Dark Mode**: Automatic system preference detection with a persistent manual toggle (including synced Mermaid diagram themes).
+- **Code-split Bundles**: Splits React/Router, Chakra UI, Lucide icons, Markdown pipeline, MiniSearch, and Mermaid chunks for fast initial page loads.
 - **SEO Ready**: Per-route static HTML metadata, OpenGraph tags, JSON-LD structured data, `sitemap.xml`, and `robots.txt`.
 
 ## Using `@aleygues/mdkb` in Your Project
@@ -88,6 +90,7 @@ Place `mdkb.config.json` inside your `--src` folder (or pass `--config`):
   "secondaryColor": "#6366f1",
   "logo": "/logo.svg",
   "baseUrl": "/",
+  "locale": "en",
   "menu": [
     {
       "category": "Getting Started",
@@ -107,6 +110,7 @@ Place `mdkb.config.json` inside your `--src` folder (or pass `--config`):
 }
 ```
 
+- `locale`: `"en"` (default) or `"fr"`. Localizes UI labels (search, TOC, pagination, code copy buttons, lightbox controls, 404 page, dates), `<html lang>`, and `og:locale`.
 - Any menu item `link` starting with `http://` or `https://` is automatically rendered as an external link (`target="_blank"` with `rel="noopener noreferrer"`).
 - `baseUrl` supports either a subpath (e.g. `"/docs/"`) or a full canonical URL (e.g. `"https://example.com/docs"`).
 
@@ -143,6 +147,21 @@ Important warning block.
 Critical danger block.
 :::
 ```
+
+### Mermaid Diagrams
+
+Fenced blocks tagged with `mermaid` are rendered natively as light/dark-aware SVG diagrams (lazy-loaded on demand):
+
+````markdown
+```mermaid
+flowchart LR
+  Draft --> Review --> Published
+```
+````
+
+### Image Zoom (Lightbox)
+
+Any standalone Markdown image (`![Alt caption](/path/to/image.png)`) can be clicked to open a full-screen lightbox modal with its caption (`Esc` or backdrop click to close).
 
 ## Example Project
 

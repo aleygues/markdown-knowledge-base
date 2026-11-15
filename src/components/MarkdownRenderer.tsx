@@ -2,6 +2,7 @@ import {
   Alert,
   Box,
   Button,
+  chakra,
   Code,
   Heading,
   HStack,
@@ -9,15 +10,30 @@ import {
   Separator,
   Text,
 } from '@chakra-ui/react'
-import { AlertTriangle, Check, Copy, ExternalLink, Info, ShieldAlert } from 'lucide-react'
-import { isValidElement, useMemo, useState, type ReactNode } from 'react'
+import { AlertTriangle, Check, Copy, ExternalLink, Info, ShieldAlert, ZoomIn } from 'lucide-react'
+import {
+  createContext,
+  isValidElement,
+  lazy,
+  Suspense,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import { Link as RouterLink } from 'react-router'
 import remarkDirective from 'remark-directive'
 import remarkGfm from 'remark-gfm'
 import { visit } from 'unist-util-visit'
 import { resolveAssetUrl } from '../lib/baseUrl.ts'
+import type { ColorScheme } from '../lib/colorScheme.ts'
+import type { MdkbTranslations } from '../lib/i18n.ts'
 import { createHeadingSlugger } from '../lib/slugger.ts'
+import { ImageLightbox, type LightboxImage } from './ImageLightbox.tsx'
+
+const LazyMermaidDiagram = lazy(() => import('./MermaidDiagram.tsx'))
+const InsideLinkContext = createContext(false)
 
 type CalloutVariant = 'info' | 'warning' | 'danger'
 
@@ -42,12 +58,6 @@ const CALLOUT_VARIANT_MAP: Record<string, CalloutVariant> = {
   caution: 'warning',
   danger: 'danger',
   error: 'danger',
-}
-
-const CALLOUT_DEFAULT_TITLES: Record<CalloutVariant, string> = {
-  info: 'Info',
-  warning: 'Warning',
-  danger: 'Danger',
 }
 
 function extractNodeText(node: MarkdownNode | undefined): string {
@@ -77,7 +87,7 @@ function remarkCallouts() {
         node.data.hName = 'mdkb-callout'
         node.data.hProperties = {
           'data-variant': variant,
-          'data-title': customTitle || CALLOUT_DEFAULT_TITLES[variant],
+          'data-title': customTitle,
         }
         return
       }
@@ -112,7 +122,7 @@ function remarkCallouts() {
         node.data.hName = 'mdkb-callout'
         node.data.hProperties = {
           'data-variant': variant,
-          'data-title': customTitle || CALLOUT_DEFAULT_TITLES[variant],
+          'data-title': customTitle,
         }
       }
     })
@@ -224,7 +234,15 @@ function CalloutBox({
   )
 }
 
-function CodeBlock({ language, codeText }: { language: string; codeText: string }) {
+function CodeBlock({
+  language,
+  codeText,
+  t,
+}: {
+  language: string
+  codeText: string
+  t: MdkbTranslations
+}) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = async () => {
@@ -264,10 +282,10 @@ function CodeBlock({ language, codeText }: { language: string; codeText: string 
           color="gray.200"
           _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
           onClick={handleCopy}
-          aria-label={copied ? 'Copied code to clipboard' : 'Copy code to clipboard'}
+          aria-label={copied ? t.copiedCodeAriaLabel : t.copyCodeAriaLabel}
         >
           {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
-          {copied ? 'Copied' : 'Copy'}
+          {copied ? t.copiedCode : t.copyCode}
         </Button>
       </HStack>
       <Box as="pre" p={4} m={0} overflowX="auto" fontSize="sm" lineHeight="1.65" fontFamily="mono">
@@ -277,13 +295,102 @@ function CodeBlock({ language, codeText }: { language: string; codeText: string 
   )
 }
 
+function ZoomableImage({
+  src,
+  alt,
+  t,
+  onZoom,
+}: {
+  src?: string
+  alt?: string
+  t: MdkbTranslations
+  onZoom: (img: LightboxImage) => void
+}) {
+  const insideLink = useContext(InsideLinkContext)
+
+  if (!src) return null
+
+  const imageElement = (
+    <Image
+      src={src}
+      alt={alt ?? ''}
+      maxW="100%"
+      borderRadius="lg"
+      borderWidth="1px"
+      borderColor="border.subtle"
+      display="block"
+    />
+  )
+
+  if (insideLink) {
+    return <Box my={5}>{imageElement}</Box>
+  }
+
+  return (
+    <Box my={5}>
+      <chakra.button
+        type="button"
+        onClick={() => onZoom({ src, alt: alt ?? '' })}
+        aria-label={alt ? `${alt} — ${t.zoomImage}` : t.zoomImage}
+        title={t.zoomImage}
+        cursor="zoom-in"
+        position="relative"
+        display="inline-block"
+        maxW="100%"
+        p={0}
+        border="none"
+        bg="transparent"
+        borderRadius="lg"
+        className="group"
+        _focusVisible={{
+          outline: '2px solid var(--mdkb-primary)',
+          outlineOffset: '3px',
+        }}
+        css={{
+          '&:hover .mdkb-zoom-badge, &:focus-visible .mdkb-zoom-badge': {
+            opacity: 1,
+          },
+        }}
+      >
+        {imageElement}
+        <Box
+          className="mdkb-zoom-badge"
+          position="absolute"
+          top={2.5}
+          right={2.5}
+          p={1.5}
+          borderRadius="md"
+          bg="blackAlpha.700"
+          color="white"
+          opacity={0}
+          transition="opacity 0.15s ease"
+          pointerEvents="none"
+          aria-hidden="true"
+        >
+          <ZoomIn size={16} />
+        </Box>
+      </chakra.button>
+    </Box>
+  )
+}
+
 interface MarkdownRendererProps {
   content: string
   currentRoute: string
   assetBase: string
+  colorScheme: ColorScheme
+  t: MdkbTranslations
 }
 
-export function MarkdownRenderer({ content, currentRoute, assetBase }: MarkdownRendererProps) {
+export function MarkdownRenderer({
+  content,
+  currentRoute,
+  assetBase,
+  colorScheme,
+  t,
+}: MarkdownRendererProps) {
+  const [lightboxImage, setLightboxImage] = useState<LightboxImage | null>(null)
+
   const components = useMemo(() => {
     const customComponents = {
       'mdkb-callout': (props: {
@@ -292,7 +399,7 @@ export function MarkdownRenderer({ content, currentRoute, assetBase }: MarkdownR
         children?: ReactNode
       }) => {
         const variant = props['data-variant'] ?? 'info'
-        const title = props['data-title'] ?? CALLOUT_DEFAULT_TITLES[variant]
+        const title = props['data-title']?.trim() || t.callout[variant]
         return (
           <CalloutBox variant={variant} title={title}>
             {props.children}
@@ -322,7 +429,7 @@ export function MarkdownRenderer({ content, currentRoute, assetBase }: MarkdownR
             <a
               href={`#${id}`}
               className="mdkb-heading-anchor"
-              aria-label={`Link to section ${typeof children === 'string' ? children : id}`}
+              aria-label={t.linkToSection(typeof children === 'string' ? children : id)}
             >
               #
             </a>
@@ -336,7 +443,7 @@ export function MarkdownRenderer({ content, currentRoute, assetBase }: MarkdownR
             <a
               href={`#${id}`}
               className="mdkb-heading-anchor"
-              aria-label={`Link to section ${typeof children === 'string' ? children : id}`}
+              aria-label={t.linkToSection(typeof children === 'string' ? children : id)}
             >
               #
             </a>
@@ -356,9 +463,13 @@ export function MarkdownRenderer({ content, currentRoute, assetBase }: MarkdownR
       a: ({ href, children }: { href?: string; children?: ReactNode }) => {
         if (!href) return <>{children}</>
 
+        const wrapLink = (node: ReactNode) => (
+          <InsideLinkContext.Provider value={true}>{node}</InsideLinkContext.Provider>
+        )
+
         const isExternal = /^(https?:\/\/|mailto:|tel:)/i.test(href)
         if (isExternal) {
-          return (
+          return wrapLink(
             <a
               href={href}
               target="_blank"
@@ -380,7 +491,7 @@ export function MarkdownRenderer({ content, currentRoute, assetBase }: MarkdownR
         }
 
         if (href.startsWith('#')) {
-          return (
+          return wrapLink(
             <a
               href={href}
               style={{
@@ -396,7 +507,7 @@ export function MarkdownRenderer({ content, currentRoute, assetBase }: MarkdownR
         }
 
         const resolved = resolveInternalMarkdownHref(href, currentRoute)
-        return (
+        return wrapLink(
           <RouterLink
             to={resolved}
             style={{
@@ -453,7 +564,30 @@ export function MarkdownRenderer({ content, currentRoute, assetBase }: MarkdownR
           const langMatch = className.match(/language-([\w-]+)/)
           const language = langMatch ? langMatch[1] : ''
           const rawCode = String(children.props.children ?? '').replace(/\n$/, '')
-          return <CodeBlock language={language} codeText={rawCode} />
+          if (language.toLowerCase() === 'mermaid') {
+            return (
+              <Suspense
+                fallback={
+                  <Box
+                    my={5}
+                    p={6}
+                    borderRadius="lg"
+                    borderWidth="1px"
+                    borderColor="border.muted"
+                    bg="bg.subtle"
+                    textAlign="center"
+                  >
+                    <Text fontSize="xs" color="fg.muted">
+                      {t.mermaidLoading}
+                    </Text>
+                  </Box>
+                }
+              >
+                <LazyMermaidDiagram code={rawCode} colorScheme={colorScheme} t={t} />
+              </Suspense>
+            )
+          }
+          return <CodeBlock language={language} codeText={rawCode} t={t} />
         }
         return (
           <Box as="pre" my={5} p={4} borderRadius="lg" bg="bg.muted" overflowX="auto">
@@ -513,21 +647,21 @@ export function MarkdownRenderer({ content, currentRoute, assetBase }: MarkdownR
         </Box>
       ),
       hr: () => <Separator my={7} />,
-      img: ({ src, alt }: { src?: string; alt?: string }) => (
-        <Image
-          src={src?.startsWith('/') ? resolveAssetUrl(src, assetBase) : src}
-          alt={alt ?? ''}
-          maxW="100%"
-          borderRadius="lg"
-          borderWidth="1px"
-          borderColor="border.subtle"
-          my={5}
-        />
-      ),
+      img: ({ src, alt }: { src?: string; alt?: string }) => {
+        const resolvedSrc = src?.startsWith('/') ? resolveAssetUrl(src, assetBase) : src
+        return (
+          <ZoomableImage
+            src={resolvedSrc}
+            alt={alt}
+            t={t}
+            onZoom={setLightboxImage}
+          />
+        )
+      },
     }
 
     return customComponents as unknown as Components
-  }, [assetBase, currentRoute])
+  }, [assetBase, colorScheme, currentRoute, t])
 
   return (
     <Box className="mdkb-markdown">
@@ -537,6 +671,11 @@ export function MarkdownRenderer({ content, currentRoute, assetBase }: MarkdownR
       >
         {content}
       </ReactMarkdown>
+      <ImageLightbox
+        image={lightboxImage}
+        onClose={() => setLightboxImage(null)}
+        t={t}
+      />
     </Box>
   )
 }

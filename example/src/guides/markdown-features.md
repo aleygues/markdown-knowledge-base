@@ -81,4 +81,24 @@ Every code fence includes a language label and a one-click **Copy** button, and 
 | Info Callout | `:::info[Title]` | Chakra `Alert` (`info`) |
 | Warning Callout | `:::warning[Title]` | Chakra `Alert` (`warning`) |
 | Danger Callout | `:::danger[Title]` | Chakra `Alert` (`error`) |
+| Mermaid Diagram | ```` ```mermaid ```` | Lazy-loaded `MermaidDiagram` |
+| Zoomable Images | `![alt](src)` | Clickable Lightbox modal |
 | Headings | `##` / `###` | Anchored headings + right-side TOC |
+
+## Mermaid Diagrams
+
+Fenced code blocks with language `mermaid` are rendered natively as theme-aware SVG diagrams (loaded lazily so pages without diagrams keep a minimal initial bundle):
+
+```mermaid
+flowchart LR
+  A[Markdown + Config] --> B[mdkb Build]
+  B --> C[MiniSearch Index]
+  B --> D[Code-Split App]
+  D --> E[Static HTML + SEO]
+```
+
+## Click-to-Zoom Images (Lightbox)
+
+Any standalone Markdown image can be clicked to open in a full-screen lightbox modal (click outside, click the image, or press `Esc` to close). Try clicking the diagram below:
+
+![mdkb static build pipeline overview](/images/mdkb-architecture.svg)

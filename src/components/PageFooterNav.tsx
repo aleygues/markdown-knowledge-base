@@ -2,14 +2,24 @@ import { Box, HStack, SimpleGrid, Text } from '@chakra-ui/react'
 import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react'
 import { Link as RouterLink } from 'react-router'
 import { isExternalUrl } from '../lib/baseUrl.ts'
+import type { MdkbTranslations } from '../lib/i18n.ts'
 import type { PageNavItem } from '../types/mdkb.ts'
 
 interface PageFooterNavProps {
   previous: PageNavItem | null
   next: PageNavItem | null
+  t: MdkbTranslations
 }
 
-function NavCard({ item, direction }: { item: PageNavItem; direction: 'previous' | 'next' }) {
+function NavCard({
+  item,
+  direction,
+  t,
+}: {
+  item: PageNavItem
+  direction: 'previous' | 'next'
+  t: MdkbTranslations
+}) {
   const isPrev = direction === 'previous'
   const external = isExternalUrl(item.link)
   const content = (
@@ -38,7 +48,7 @@ function NavCard({ item, direction }: { item: PageNavItem; direction: 'previous'
         letterSpacing="wider"
       >
         {isPrev && <ArrowLeft size={14} aria-hidden="true" />}
-        <span>{isPrev ? 'Previous' : 'Next'}</span>
+        <span>{isPrev ? t.previous : t.next}</span>
         {!isPrev &&
           (external ? (
             <ExternalLink size={14} aria-hidden="true" />
@@ -75,14 +85,21 @@ function NavCard({ item, direction }: { item: PageNavItem; direction: 'previous'
   )
 }
 
-export function PageFooterNav({ previous, next }: PageFooterNavProps) {
+export function PageFooterNav({ previous, next, t }: PageFooterNavProps) {
   if (!previous && !next) return null
 
   return (
-    <Box as="nav" aria-label="Page pagination" mt={12} pt={6} borderTopWidth="1px" borderColor="border.subtle">
+    <Box
+      as="nav"
+      aria-label={t.paginationAriaLabel}
+      mt={12}
+      pt={6}
+      borderTopWidth="1px"
+      borderColor="border.subtle"
+    >
       <SimpleGrid columns={{ base: 1, sm: 2 }} gap={4}>
-        <Box>{previous && <NavCard item={previous} direction="previous" />}</Box>
-        <Box>{next && <NavCard item={next} direction="next" />}</Box>
+        <Box>{previous && <NavCard item={previous} direction="previous" t={t} />}</Box>
+        <Box>{next && <NavCard item={next} direction="next" t={t} />}</Box>
       </SimpleGrid>
     </Box>
   )

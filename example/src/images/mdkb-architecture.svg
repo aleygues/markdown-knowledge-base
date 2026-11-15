@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" width="720" height="260" role="img" aria-label="mdkb static documentation build pipeline">
+  <rect width="720" height="260" rx="16" fill="#0f172a" />
+  <rect x="36" y="70" width="180" height="120" rx="12" fill="#1e293b" stroke="#0ea5e9" stroke-width="2" />
+  <text x="126" y="116" text-anchor="middle" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="16" font-weight="700">src/</text>
+  <text x="126" y="142" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="13">Markdown files</text>
+  <text x="126" y="162" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">mdkb.config.json</text>
+
+  <line x1="216" y1="130" x2="262" y2="130" stroke="#6366f1" stroke-width="3" />
+  <polygon points="270,130 258,123 258,137" fill="#6366f1" />
+
+  <rect x="270" y="70" width="180" height="120" rx="12" fill="#1e293b" stroke="#6366f1" stroke-width="2" />
+  <text x="360" y="116" text-anchor="middle" fill="#818cf8" font-family="system-ui, sans-serif" font-size="16" font-weight="700">@aleygues/mdkb</text>
+  <text x="360" y="142" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="13">MiniSearch Index</text>
+  <text x="360" y="162" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">Code-split Vite Bundle</text>
+
+  <line x1="450" y1="130" x2="496" y2="130" stroke="#0ea5e9" stroke-width="3" />
+  <polygon points="504,130 492,123 492,137" fill="#0ea5e9" />
+
+  <rect x="504" y="70" width="180" height="120" rx="12" fill="#1e293b" stroke="#10b981" stroke-width="2" />
+  <text x="594" y="116" text-anchor="middle" fill="#34d399" font-family="system-ui, sans-serif" font-size="16" font-weight="700">dist/</text>
+  <text x="594" y="142" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="13">Static HTML &amp; JS</text>
+  <text x="594" y="162" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">sitemap.xml + SEO</text>
+</svg>

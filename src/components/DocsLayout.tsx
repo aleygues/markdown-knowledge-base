@@ -6,14 +6,18 @@ import {
   Portal,
   Text,
 } from '@chakra-ui/react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import type { ColorScheme } from '../lib/colorScheme.ts'
+import type { MdkbTranslations } from '../lib/i18n.ts'
 import type { DocHeading, MdkbConfig, SearchDocument } from '../types/mdkb.ts'
 import { Header } from './Header.tsx'
-import { SearchDialog } from './SearchDialog.tsx'
 import { SidebarNav } from './SidebarNav.tsx'
 import { TableOfContents } from './TableOfContents.tsx'
+
+const LazySearchDialog = lazy(() =>
+  import('./SearchDialog.tsx').then((m) => ({ default: m.SearchDialog }))
+)
 
 interface DocsLayoutProps {
   config: MdkbConfig
@@ -24,7 +28,9 @@ interface DocsLayoutProps {
   searchDocs: Record<string, SearchDocument>
   headings: DocHeading[]
   isSearchOpen: boolean
+  isSearchMounted: boolean
   onSearchOpenChange: (open: boolean) => void
+  t: MdkbTranslations
   children: ReactNode
 }
 
@@ -37,7 +43,9 @@ export function DocsLayout({
   searchDocs,
   headings,
   isSearchOpen,
+  isSearchMounted,
   onSearchOpenChange,
+  t,
   children,
 }: DocsLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -83,7 +91,7 @@ export function DocsLayout({
   return (
     <Flex direction="column" minH="100dvh" bg="bg" color="fg">
       <a href="#main-content" className="skip-link">
-        Skip to main content
+        {t.skipToContent}
       </a>
 
       <Header
@@ -94,6 +102,7 @@ export function DocsLayout({
         onOpenSearch={() => onSearchOpenChange(true)}
         onOpenMobileMenu={() => setMobileMenuOpen(true)}
         isMobileMenuOpen={mobileMenuOpen}
+        t={t}
       />
 
       <Flex
@@ -115,7 +124,7 @@ export function DocsLayout({
           pe={4}
         >
           <Box position="sticky" top="88px" maxH="calc(100vh - 110px)" overflowY="auto">
-            <SidebarNav menu={config.menu} />
+            <SidebarNav menu={config.menu} t={t} />
           </Box>
         </Box>
 
@@ -128,7 +137,7 @@ export function DocsLayout({
 
         {/* Table of Contents */}
         <Box py={{ base: 6, md: 8 }}>
-          <TableOfContents headings={headings} />
+          <TableOfContents headings={headings} t={t} />
         </Box>
       </Flex>
 
@@ -150,7 +159,7 @@ export function DocsLayout({
           color="fg.muted"
         >
           <Text>{config.title}</Text>
-          <Text>Built with mdkb &bull; Markdown Knowledge Base</Text>
+          <Text>{t.footerBuiltWith}</Text>
         </Flex>
       </Box>
 
@@ -170,12 +179,13 @@ export function DocsLayout({
                   {config.title}
                 </Drawer.Title>
                 <Drawer.CloseTrigger asChild>
-                  <CloseButton size="sm" aria-label="Close navigation menu" />
+                  <CloseButton size="sm" aria-label={t.closeNavMenu} />
                 </Drawer.CloseTrigger>
               </Drawer.Header>
               <Drawer.Body py={5}>
                 <SidebarNav
                   menu={config.menu}
+                  t={t}
                   onNavigate={() => setMobileMenuOpen(false)}
                 />
               </Drawer.Body>
@@ -184,13 +194,18 @@ export function DocsLayout({
         </Portal>
       </Drawer.Root>
 
-      {/* Search Modal */}
-      <SearchDialog
-        open={isSearchOpen}
-        onOpenChange={onSearchOpenChange}
-        searchIndexJson={searchIndexJson}
-        searchDocs={searchDocs}
-      />
+      {/* Search Modal (lazy-loaded on first open) */}
+      {(isSearchOpen || isSearchMounted) && (
+        <Suspense fallback={null}>
+          <LazySearchDialog
+            open={isSearchOpen}
+            onOpenChange={onSearchOpenChange}
+            searchIndexJson={searchIndexJson}
+            searchDocs={searchDocs}
+            t={t}
+          />
+        </Suspense>
+      )}
     </Flex>
   )
 }

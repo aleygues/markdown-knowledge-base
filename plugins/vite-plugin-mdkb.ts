@@ -41,6 +41,7 @@ const DEFAULT_CONFIG: MdkbConfig = {
   secondaryColor: '#6366f1',
   logo: '/logo.svg',
   baseUrl: '/',
+  locale: 'en',
   menu: [],
 }
 
@@ -233,6 +234,12 @@ export function loadMdkbConfig(
             : typeof parsed.baseURL === 'string' && parsed.baseURL.trim()
               ? parsed.baseURL.trim()
               : DEFAULT_CONFIG.baseUrl,
+        locale:
+          typeof parsed.locale === 'string' && parsed.locale.trim()
+            ? parsed.locale.trim()
+            : typeof parsed.lang === 'string' && parsed.lang.trim()
+              ? parsed.lang.trim()
+              : DEFAULT_CONFIG.locale,
         menu: normalizeMenu(parsed.menu),
       }
     } catch (err) {
@@ -632,10 +639,14 @@ function injectSeoMeta(
   const canonicalPath = `${basePath}${routePath}`.replace(/\/+/g, '/')
   const canonicalUrl = origin ? `${origin}${canonicalPath}` : canonicalPath
 
+  const htmlLang = config.locale?.trim().toLowerCase().startsWith('fr') ? 'fr' : 'en'
+  const ogLocale = htmlLang === 'fr' ? 'fr_FR' : 'en_US'
+
   const metaBlock = [
     `<meta name="description" content="${escapeHtml(description)}" />`,
     `<meta name="theme-color" content="${escapeHtml(config.primaryColor)}" />`,
     `<meta property="og:type" content="${page && page.route !== '/' ? 'article' : 'website'}" />`,
+    `<meta property="og:locale" content="${ogLocale}" />`,
     `<meta property="og:site_name" content="${escapeHtml(config.title)}" />`,
     `<meta property="og:title" content="${escapeHtml(pageTitle)}" />`,
     `<meta property="og:description" content="${escapeHtml(description)}" />`,
@@ -648,7 +659,13 @@ function injectSeoMeta(
     .filter(Boolean)
     .join('\n    ')
 
-  let updated = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(pageTitle)}</title>`)
+  let updated = html.replace(/<html(\s+[^>]*)?>/i, (match, attrs = '') => {
+    if (/\blang\s*=/i.test(attrs)) {
+      return match.replace(/\blang\s*=\s*"[^"]*"/i, `lang="${htmlLang}"`)
+    }
+    return `<html lang="${htmlLang}"${attrs}>`
+  })
+  updated = updated.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(pageTitle)}</title>`)
   updated = updated.replace('</head>', `    ${metaBlock}\n  </head>`)
   return updated
 }
@@ -678,6 +695,46 @@ export function mdkbPlugin(options: MdkbPluginOptions = {}): Plugin {
 
   return {
     name: 'vite-plugin-mdkb',
+
+    config() {
+      return {
+        build: {
+          rolldownOptions: {
+            output: {
+              codeSplitting: {
+                groups: [
+                  {
+                    name: 'vendor-react',
+                    test: /node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/,
+                    priority: 30,
+                  },
+                  {
+                    name: 'vendor-chakra',
+                    test: /node_modules[\\/](@chakra-ui|@ark-ui|@zag-js|@emotion)[\\/]/,
+                    priority: 25,
+                  },
+                  {
+                    name: 'vendor-icons',
+                    test: /node_modules[\\/]lucide-react[\\/]/,
+                    priority: 20,
+                  },
+                  {
+                    name: 'vendor-markdown',
+                    test: /node_modules[\\/](react-markdown|remark|rehype|unified|mdast|hast|micromark|unist|vfile|property-information)[\\/]/,
+                    priority: 15,
+                  },
+                  {
+                    name: 'vendor-search',
+                    test: /node_modules[\\/]minisearch[\\/]/,
+                    priority: 15,
+                  },
+                ],
+              },
+            },
+          },
+        },
+      }
+    },
 
     configResolved(config) {
       resolvedConfig = config

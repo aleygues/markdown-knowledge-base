@@ -1,6 +1,6 @@
 import { ChakraProvider } from '@chakra-ui/react'
 import mdkbData from 'virtual:mdkb-data'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router'
 import { DocsLayout } from './components/DocsLayout.tsx'
 import { MarkdownRenderer } from './components/MarkdownRenderer.tsx'
@@ -11,6 +11,8 @@ import { SeoHead } from './components/SeoHead.tsx'
 import { parseRuntimeBaseUrl } from './lib/baseUrl.ts'
 import { useColorScheme } from './lib/colorScheme.ts'
 import { applyBrandCssVariables, createMdkbSystem } from './lib/theme.ts'
+import { getTranslations, type MdkbTranslations } from './lib/i18n.ts'
+import type { ColorScheme } from './lib/colorScheme.ts'
 import type { DocPage } from './types/mdkb.ts'
 
 function DocPageView({
@@ -18,11 +20,15 @@ function DocPageView({
   assetBase,
   basename,
   origin,
+  colorScheme,
+  t,
 }: {
   page: DocPage
   assetBase: string
   basename: string
   origin: string
+  colorScheme: ColorScheme
+  t: MdkbTranslations
 }) {
   return (
     <>
@@ -31,15 +37,18 @@ function DocPageView({
         config={mdkbData.config}
         basename={basename}
         origin={origin}
+        t={t}
       />
       <article aria-labelledby="page-title">
-        <PageHeader page={page} />
+        <PageHeader page={page} t={t} />
         <MarkdownRenderer
           content={page.body}
           currentRoute={page.route}
           assetBase={assetBase}
+          colorScheme={colorScheme}
+          t={t}
         />
-        <PageFooterNav previous={page.previous} next={page.next} />
+        <PageFooterNav previous={page.previous} next={page.next} t={t} />
       </article>
     </>
   )
@@ -51,14 +60,22 @@ function DocsRouterContent({
   origin,
   colorScheme,
   toggleColorScheme,
+  t,
 }: {
   assetBase: string
   basename: string
   origin: string
-  colorScheme: 'light' | 'dark'
+  colorScheme: ColorScheme
   toggleColorScheme: () => void
+  t: MdkbTranslations
 }) {
   const [searchOpen, setSearchOpen] = useState(false)
+  const [searchMounted, setSearchMounted] = useState(false)
+
+  const handleSearchOpenChange = useCallback((open: boolean) => {
+    if (open) setSearchMounted(true)
+    setSearchOpen(open)
+  }, [])
 
   const pageMap = useMemo(
     () => new Map(mdkbData.pages.map((p) => [p.route, p])),
@@ -81,13 +98,17 @@ function DocsRouterContent({
               searchDocs={mdkbData.searchDocs}
               headings={page.headings}
               isSearchOpen={searchOpen}
-              onSearchOpenChange={setSearchOpen}
+              isSearchMounted={searchMounted}
+              onSearchOpenChange={handleSearchOpenChange}
+              t={t}
             >
               <DocPageView
                 page={page}
                 assetBase={assetBase}
                 basename={basename}
                 origin={origin}
+                colorScheme={colorScheme}
+                t={t}
               />
             </DocsLayout>
           }
@@ -105,14 +126,17 @@ function DocsRouterContent({
             searchDocs={mdkbData.searchDocs}
             headings={pageMap.get('/')?.headings ?? []}
             isSearchOpen={searchOpen}
-            onSearchOpenChange={setSearchOpen}
+            isSearchMounted={searchMounted}
+            onSearchOpenChange={handleSearchOpenChange}
+            t={t}
           >
             <SeoHead
               config={mdkbData.config}
               basename={basename}
               origin={origin}
+              t={t}
             />
-            <NotFoundPage onOpenSearch={() => setSearchOpen(true)} />
+            <NotFoundPage onOpenSearch={() => handleSearchOpenChange(true)} t={t} />
           </DocsLayout>
         }
       />
@@ -126,6 +150,7 @@ export default function App() {
     () => parseRuntimeBaseUrl(mdkbData.config.baseUrl),
     []
   )
+  const t = useMemo(() => getTranslations(mdkbData.config.locale), [])
 
   const system = useMemo(
     () =>
@@ -152,6 +177,7 @@ export default function App() {
           origin={origin}
           colorScheme={colorScheme}
           toggleColorScheme={toggleColorScheme}
+          t={t}
         />
       </BrowserRouter>
     </ChakraProvider>

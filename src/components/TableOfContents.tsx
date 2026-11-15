@@ -1,17 +1,19 @@
 import { Box, Text } from '@chakra-ui/react'
+import type { MdkbTranslations } from '../lib/i18n.ts'
 import type { DocHeading } from '../types/mdkb.ts'
 
 interface TableOfContentsProps {
   headings: DocHeading[]
+  t: MdkbTranslations
 }
 
-export function TableOfContents({ headings }: TableOfContentsProps) {
+export function TableOfContents({ headings, t }: TableOfContentsProps) {
   if (headings.length === 0) return null
 
   return (
     <Box
       as="aside"
-      aria-label="On this page"
+      aria-label={t.onThisPage}
       display={{ base: 'none', xl: 'block' }}
       w="230px"
       flexShrink={0}
@@ -25,7 +27,7 @@ export function TableOfContents({ headings }: TableOfContentsProps) {
           color="fg.muted"
           mb={3}
         >
-          On this page
+          {t.onThisPage}
         </Text>
         <Box as="ul" role="list" m={0} p={0} listStyleType="none">
           {headings.map((heading) => (

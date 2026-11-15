@@ -16,6 +16,7 @@ import { ArrowRight, FileText, Search, X } from 'lucide-react'
 import { useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { executeSearch } from '../lib/search.ts'
+import type { MdkbTranslations } from '../lib/i18n.ts'
 import type { SearchDocument } from '../types/mdkb.ts'
 
 interface SearchDialogProps {
@@ -23,6 +24,7 @@ interface SearchDialogProps {
   onOpenChange: (open: boolean) => void
   searchIndexJson: string
   searchDocs: Record<string, SearchDocument>
+  t: MdkbTranslations
 }
 
 function HighlightedText({ text, terms }: { text: string; terms: string[] }) {
@@ -56,6 +58,7 @@ export function SearchDialog({
   onOpenChange,
   searchIndexJson,
   searchDocs,
+  t,
 }: SearchDialogProps) {
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -121,7 +124,7 @@ export function SearchDialog({
           >
             <Dialog.Header p={0}>
               <VisuallyHidden>
-                <Dialog.Title>Search documentation</Dialog.Title>
+                <Dialog.Title>{t.searchTitle}</Dialog.Title>
               </VisuallyHidden>
               <HStack
                 px={4}
@@ -132,7 +135,7 @@ export function SearchDialog({
               >
                 <Search size={18} aria-hidden="true" color="var(--mdkb-primary)" />
                 <label htmlFor={inputId}>
-                  <VisuallyHidden>Search documentation query</VisuallyHidden>
+                  <VisuallyHidden>{t.searchQueryLabel}</VisuallyHidden>
                 </label>
                 <Input
                   id={inputId}
@@ -144,7 +147,7 @@ export function SearchDialog({
                     setSelectedIndex(0)
                   }}
                   onKeyDown={handleKeyDown}
-                  placeholder="Search pages, headings, and content…"
+                  placeholder={t.searchInputPlaceholder}
                   variant="flushed"
                   border="none"
                   _focus={{ boxShadow: 'none', outline: 'none' }}
@@ -154,7 +157,7 @@ export function SearchDialog({
                 <IconButton
                   size="xs"
                   variant="ghost"
-                  aria-label="Close search"
+                  aria-label={t.closeSearch}
                   onClick={() => handleOpenChange(false)}
                 >
                   <X size={16} aria-hidden="true" />
@@ -165,21 +168,19 @@ export function SearchDialog({
             <Dialog.Body p={3} maxH="60vh" overflowY="auto">
               {!query.trim() ? (
                 <Box py={8} textAlign="center" color="fg.muted">
-                  <Text fontSize="sm">
-                    Type keywords to search across all pre-indexed Markdown pages.
-                  </Text>
+                  <Text fontSize="sm">{t.searchEmptyPrompt}</Text>
                 </Box>
               ) : hits.length === 0 ? (
                 <Box py={8} textAlign="center" color="fg.muted">
                   <Text fontSize="sm" fontWeight="medium">
-                    No results found for &ldquo;{query}&rdquo;
+                    {t.noResultsFor(query)}
                   </Text>
                   <Text fontSize="xs" mt={1}>
-                    Try a different keyword or check spelling.
+                    {t.noResultsHint}
                   </Text>
                 </Box>
               ) : (
-                <VStack align="stretch" gap={1.5} role="listbox" aria-label="Search results">
+                <VStack align="stretch" gap={1.5} role="listbox" aria-label={t.searchResultsLabel}>
                   {hits.map((hit, idx) => {
                     const isSelected = idx === selectedIndex
                     return (
@@ -242,19 +243,19 @@ export function SearchDialog({
                 <HStack gap={1}>
                   <Kbd size="sm">↑</Kbd>
                   <Kbd size="sm">↓</Kbd>
-                  <span>Navigate</span>
+                  <span>{t.kbdNavigate}</span>
                 </HStack>
                 <HStack gap={1}>
                   <Kbd size="sm">Enter</Kbd>
-                  <span>Open</span>
+                  <span>{t.kbdOpen}</span>
                 </HStack>
                 <HStack gap={1}>
                   <Kbd size="sm">Esc</Kbd>
-                  <span>Close</span>
+                  <span>{t.kbdClose}</span>
                 </HStack>
               </HStack>
               <Text fontSize="xs" color="fg.muted">
-                Powered by MiniSearch
+                {t.poweredBy}
               </Text>
             </Dialog.Footer>
           </Dialog.Content>

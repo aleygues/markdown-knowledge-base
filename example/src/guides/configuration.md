@@ -22,6 +22,7 @@ Place `mdkb.config.json` alongside your Markdown files (for example in `src/mdkb
 | `secondaryColor` | `string` | `"#6366f1"` | Secondary accent color used for quotes and supporting accents. |
 | `logo` | `string` | `"/logo.svg"` | Path to a static asset or external image URL displayed in the top bar. |
 | `baseUrl` | `string` | `"/"` | Deployment subpath (e.g. `"/docs/"`) or full canonical origin + path (e.g. `"https://example.com/docs"`). |
+| `locale` | `string` | `"en"` | UI language (`"en"` or `"fr"`). Translates UI controls, date formatting, `<html lang>`, and `og:locale`. |
 | `menu` | `array` | Auto-generated | Ordered sidebar categories containing internal routes or `http://` / `https://` external links. |
 
 ## Example `mdkb.config.json`
@@ -34,6 +35,7 @@ Place `mdkb.config.json` alongside your Markdown files (for example in `src/mdkb
   "secondaryColor": "#6366f1",
   "logo": "/logo.svg",
   "baseUrl": "/",
+  "locale": "en",
   "menu": [
     {
       "category": "Getting Started",

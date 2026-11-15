@@ -8,6 +8,8 @@ export interface MdkbMenuCategory {
   items: MdkbMenuItem[]
 }
 
+export type MdkbLocale = 'en' | 'fr'
+
 export interface MdkbConfig {
   title: string
   description: string
@@ -15,6 +17,7 @@ export interface MdkbConfig {
   secondaryColor: string
   logo?: string
   baseUrl?: string
+  locale?: string
   menu: MdkbMenuCategory[]
 }
 

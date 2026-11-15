@@ -1,22 +1,18 @@
 import { Badge, Box, Heading, HStack, Separator, Text } from '@chakra-ui/react'
 import { CalendarClock } from 'lucide-react'
+import { formatLocalizedDate, type MdkbTranslations } from '../lib/i18n.ts'
 import type { DocPage } from '../types/mdkb.ts'
 
 interface PageHeaderProps {
   page: DocPage
+  t: MdkbTranslations
 }
 
-function formatDisplayDate(raw: string): string {
-  const parsed = new Date(raw)
-  if (Number.isNaN(parsed.getTime())) return raw
-  return parsed.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
-}
+export function PageHeader({ page, t }: PageHeaderProps) {
+  const updatedTemplate = page.updatedAt
+    ? t.updatedOn('__DATE__').split('__DATE__')
+    : null
 
-export function PageHeader({ page }: PageHeaderProps) {
   return (
     <Box mb={6}>
       <HStack gap={2} mb={2.5} flexWrap="wrap">
@@ -35,11 +31,15 @@ export function PageHeader({ page }: PageHeaderProps) {
             {page.category}
           </Badge>
         )}
-        {page.updatedAt && (
+        {page.updatedAt && updatedTemplate && (
           <HStack gap={1.5} fontSize="xs" color="fg.muted">
             <CalendarClock size={14} aria-hidden="true" />
             <span>
-              Updated <time dateTime={page.updatedAt}>{formatDisplayDate(page.updatedAt)}</time>
+              {updatedTemplate[0]}
+              <time dateTime={page.updatedAt}>
+                {formatLocalizedDate(page.updatedAt, t.locale)}
+              </time>
+              {updatedTemplate[1] ?? ''}
             </span>
           </HStack>
         )}

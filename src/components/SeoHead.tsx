@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import type { MdkbTranslations } from '../lib/i18n.ts'
 import type { DocPage, MdkbConfig } from '../types/mdkb.ts'
 
 interface SeoHeadProps {
@@ -6,6 +7,7 @@ interface SeoHeadProps {
   config: MdkbConfig
   basename: string
   origin: string
+  t: MdkbTranslations
 }
 
 function upsertMeta(selector: string, attrs: Record<string, string>, content: string): void {
@@ -30,13 +32,13 @@ function upsertLink(rel: string, href: string): void {
   el.setAttribute('href', href)
 }
 
-export function SeoHead({ page, config, basename, origin }: SeoHeadProps) {
+export function SeoHead({ page, config, basename, origin, t }: SeoHeadProps) {
   useEffect(() => {
     const title = page
       ? page.route === '/'
         ? `${page.title} — ${config.title}`
         : `${page.title} | ${config.title}`
-      : `Page Not Found | ${config.title}`
+      : `${t.notFoundSeoTitle} | ${config.title}`
 
     const description = page?.description ?? config.description
     const runtimeOrigin = origin || window.location.origin
@@ -45,6 +47,7 @@ export function SeoHead({ page, config, basename, origin }: SeoHeadProps) {
     const canonicalPath = `${prefix}${routePath === '/' ? '/' : routePath}`.replace(/\/+/g, '/')
     const canonicalUrl = `${runtimeOrigin}${canonicalPath}`
 
+    document.documentElement.lang = t.htmlLang
     document.title = title
 
     upsertMeta('meta[name="description"]', { name: 'description' }, description)
@@ -53,6 +56,11 @@ export function SeoHead({ page, config, basename, origin }: SeoHeadProps) {
       'meta[property="og:type"]',
       { property: 'og:type' },
       page && page.route !== '/' ? 'article' : 'website'
+    )
+    upsertMeta(
+      'meta[property="og:locale"]',
+      { property: 'og:locale' },
+      t.locale === 'fr' ? 'fr_FR' : 'en_US'
     )
     upsertMeta('meta[property="og:site_name"]', { property: 'og:site_name' }, config.title)
     upsertMeta('meta[property="og:title"]', { property: 'og:title' }, title)
@@ -93,7 +101,7 @@ export function SeoHead({ page, config, basename, origin }: SeoHeadProps) {
         }
 
     ldScript.textContent = JSON.stringify(structuredData)
-  }, [basename, config, origin, page])
+  }, [basename, config, origin, page, t])
 
   return null
 }

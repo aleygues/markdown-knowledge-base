@@ -3,6 +3,7 @@ import { Menu, Moon, Search, Sun } from 'lucide-react'
 import { Link as RouterLink } from 'react-router'
 import { resolveAssetUrl } from '../lib/baseUrl.ts'
 import type { ColorScheme } from '../lib/colorScheme.ts'
+import type { MdkbTranslations } from '../lib/i18n.ts'
 import type { MdkbConfig } from '../types/mdkb.ts'
 
 interface HeaderProps {
@@ -13,6 +14,7 @@ interface HeaderProps {
   onOpenSearch: () => void
   onOpenMobileMenu: () => void
   isMobileMenuOpen: boolean
+  t: MdkbTranslations
 }
 
 export function Header({
@@ -23,6 +25,7 @@ export function Header({
   onOpenSearch,
   onOpenMobileMenu,
   isMobileMenuOpen,
+  t,
 }: HeaderProps) {
   const logoSrc = resolveAssetUrl(config.logo, assetBase)
 
@@ -51,7 +54,7 @@ export function Header({
             display={{ base: 'inline-flex', lg: 'none' }}
             variant="ghost"
             size="sm"
-            aria-label="Open navigation menu"
+            aria-label={t.openNavMenu}
             aria-expanded={isMobileMenuOpen}
             onClick={onOpenMobileMenu}
           >
@@ -72,7 +75,7 @@ export function Header({
             {logoSrc && (
               <Image
                 src={logoSrc}
-                alt={`${config.title} logo`}
+                alt={t.logoAlt(config.title)}
                 boxSize="30px"
                 borderRadius="md"
                 objectFit="contain"
@@ -95,7 +98,7 @@ export function Header({
             variant="outline"
             size="sm"
             onClick={onOpenSearch}
-            aria-label="Search documentation"
+            aria-label={t.searchLabel}
             px={{ base: 2.5, sm: 3.5 }}
             minW={{ base: 'auto', sm: '210px', md: '250px' }}
             justifyContent="space-between"
@@ -107,7 +110,7 @@ export function Header({
             <HStack gap={2}>
               <Search size={15} aria-hidden="true" />
               <Text display={{ base: 'none', sm: 'inline' }} fontSize="sm" fontWeight="400">
-                Search docs…
+                {t.searchButtonPlaceholder}
               </Text>
             </HStack>
             <HStack display={{ base: 'none', md: 'flex' }} gap={1}>
@@ -120,8 +123,8 @@ export function Header({
             variant="ghost"
             size="sm"
             onClick={onToggleColorScheme}
-            aria-label={colorScheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            title={colorScheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={colorScheme === 'dark' ? t.switchToLight : t.switchToDark}
+            title={colorScheme === 'dark' ? t.switchToLight : t.switchToDark}
           >
             {colorScheme === 'dark' ? (
               <Sun size={18} aria-hidden="true" />

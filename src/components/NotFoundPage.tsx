@@ -1,12 +1,14 @@
 import { Box, Button, Heading, HStack, Text } from '@chakra-ui/react'
 import { Home, Search } from 'lucide-react'
 import { Link as RouterLink } from 'react-router'
+import type { MdkbTranslations } from '../lib/i18n.ts'
 
 interface NotFoundPageProps {
   onOpenSearch: () => void
+  t: MdkbTranslations
 }
 
-export function NotFoundPage({ onOpenSearch }: NotFoundPageProps) {
+export function NotFoundPage({ onOpenSearch, t }: NotFoundPageProps) {
   return (
     <Box py={16} textAlign="center">
       <Text
@@ -20,10 +22,10 @@ export function NotFoundPage({ onOpenSearch }: NotFoundPageProps) {
         404
       </Text>
       <Heading as="h1" size="2xl" mb={3}>
-        Page not found
+        {t.notFoundTitle}
       </Heading>
       <Text color="fg.muted" maxW="md" mx="auto" mb={8}>
-        The documentation page you requested does not exist or may have been moved.
+        {t.notFoundDescription}
       </Text>
       <HStack justify="center" gap={3} flexWrap="wrap">
         <RouterLink to="/" style={{ textDecoration: 'none' }}>
@@ -34,12 +36,12 @@ export function NotFoundPage({ onOpenSearch }: NotFoundPageProps) {
             }}
           >
             <Home size={16} aria-hidden="true" />
-            Back to Home
+            {t.backToHome}
           </Button>
         </RouterLink>
         <Button variant="outline" onClick={onOpenSearch}>
           <Search size={16} aria-hidden="true" />
-          Search docs
+          {t.searchDocs}
         </Button>
       </HStack>
     </Box>
